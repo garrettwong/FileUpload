@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
 
@@ -14,13 +15,13 @@ namespace FileUpload.Controllers
             // pre-processing
             Debug.WriteLine("ACTION 1 DEBUG pre-processing logging");
 
+
             var request = actionContext.Request;
             if (request != null)
             {
                 // log all this
                 var httpContent = request.Content;
                 var result = httpContent.ReadAsStringAsync().Result;
-
 
                 // "OK"
                 //var reasonPhrase = request.ReasonPhrase;
@@ -44,11 +45,20 @@ namespace FileUpload.Controllers
                 {
                     var postArgs = actionContext.ActionArguments.ToList();
                 }
+
+
+
             }
         }
 
         public override void OnActionExecuted(HttpActionExecutedContext actionExecutedContext)
         {
+            if (actionExecutedContext.Exception != null)
+            {
+                LogException(actionExecutedContext.Request, actionExecutedContext.Exception);
+                return;
+            } 
+
             var objectContent = actionExecutedContext.Response.Content as ObjectContent;
             if (objectContent != null)
             {
@@ -83,10 +93,37 @@ namespace FileUpload.Controllers
                 var content = response.RequestMessage.Content;
                 var result = content.ReadAsStringAsync().Result;
 
-
+                LogInfo(actionExecutedContext.Request, actionExecutedContext.Response);
             }
 
             Debug.WriteLine("ACTION 1 DEBUG  OnActionExecuted Response " + actionExecutedContext.Response.StatusCode.ToString());
+        }
+
+        public void LogInfo(HttpRequestMessage request, HttpResponseMessage response)
+        {
+            log4net.GlobalContext.Properties["LogFileName"] = @"C:\\Data\\file1";
+            log4net.Config.XmlConfigurator.Configure();
+            var log = log4net.LogManager.GetLogger(this.GetType());
+
+            var sb = new StringBuilder();
+
+            sb.Append($"{request.Method.Method},{request.RequestUri},{request.Headers.ToString()},{request.Content.ToString()}");
+            sb.Append($"{response.RequestMessage.Method.Method},{response.RequestMessage.RequestUri},{response.RequestMessage.Headers.ToString()},{response.RequestMessage.Content.ToString()},{response.StatusCode.ToString()}");
+
+            log.Info(sb.ToString());
+        }
+        public void LogException(HttpRequestMessage request, Exception exception)
+        {
+            log4net.GlobalContext.Properties["LogFileName"] = @"C:\\Data\\file1";
+            log4net.Config.XmlConfigurator.Configure();
+            var log = log4net.LogManager.GetLogger(this.GetType());
+
+            var sb = new StringBuilder();
+
+            sb.Append($"{request.Method.Method},{request.RequestUri},{request.Headers.ToString()},{request.Content.ToString()}");
+            sb.Append("Exception has occurred: " + exception.ToString());
+
+            log.Error(sb.ToString());
         }
     }
 }

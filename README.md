@@ -6,7 +6,7 @@ File Upload Demos in C#
 3. Run
 
 ## Node Packages install
-1. npm install on FileUpload
+1. npm install
 
 Contains a WebAPI endpoint for uploading files and getting that file.
 
